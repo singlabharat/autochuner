@@ -1,0 +1,21 @@
+[project]
+name = "uv"
+version = "0.1.0"
+description = "Autotuner backend (FastAPI)"
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [ { name = "Autotuner" } ]
+dependencies = [
+  "fastapi",
+  "uvicorn[standard]",
+  "numpy",
+  "librosa",
+  "soundfile",
+  "scipy",
+  "matplotlib",
+  "psola",
+]
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
