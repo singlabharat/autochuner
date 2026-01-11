@@ -11,9 +11,16 @@ import autotuner as at
 
 app = FastAPI()
 
+@app.get("/")
+def health():
+    return {"ok": True}
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=[
+        "http://localhost:5173",
+        "https://autochuner.vercel.app"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

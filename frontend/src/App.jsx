@@ -31,7 +31,7 @@ export default function App() {
     form.append('correction', String(correction));
 
     try {
-      const res = await fetch('http://127.0.0.1:8000/tune', { method: 'POST', body: form });
+      const res = await fetch('https://autochuner.onrender.com', { method: 'POST', body: form });
       if (!res.ok) {
         alert('Tune failed');
         return;
