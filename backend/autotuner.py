@@ -52,17 +52,6 @@ def smooth_pitch_contours(pitch_array, window_length=11, polyorder=3):
     
     return smoothed_pitch
 
-
-def compress_audio(audio, gain_db=5.0):
-    """
-    Boosts volume and gently squashes peaks.
-    """
-    linear_gain = 10**(gain_db / 20.0)
-    
-    amped_audio = audio * linear_gain
-    
-    return np.tanh(np.tanh(amped_audio))
-
 def get_target_pitch(f0, scale=None):
     """
     Returns the 'perfect' snapped pitch for each frame without smoothing.
@@ -195,9 +184,6 @@ def autotune(audio, sr, scale, alpha, plot):
     # Pitch-shifting (PSOLA)
     # PSOLA receives the clean, interpolated, naturally corrected pitch
     processed = psola.vocode(audio, sample_rate=int(sr), target_pitch=corrected_f0, fmin=fmin, fmax=fmax)
-
-    # Compress the dynamic range to make loud parts quieter and quiet parts louder
-    processed = compress_audio(processed)
 
     # Create a time axis for frames (seconds)
     time_points = librosa.frames_to_time(np.arange(len(f0)), sr=sr, hop_length=hop_length)

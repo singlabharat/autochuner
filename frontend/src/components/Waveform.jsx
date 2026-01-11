@@ -1,49 +1,49 @@
 import React, { useEffect, useRef, useState } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 
-// Removed forwardRef, we don't need it anymore
-export default function Waveform({ audioBase64 }) {
+export default function Waveform({ url, base64 }) {
   const containerRef = useRef();
   const wsRef = useRef(null);
   const [loaded, setLoaded] = useState(false);
 
-  // 1. Initialize WaveSurfer on Mount
   useEffect(() => {
     wsRef.current = WaveSurfer.create({
       container: containerRef.current,
       waveColor: '#93c5fd',
       progressColor: '#2563eb',
-      height: 120,
-      normalize: true, // Helpful for making the waveform look "full"
+      height: 100,
     });
-
-    // Handle interaction
-    wsRef.current.on('finish', () => setLoaded(true)); // Just to ensure state updates
-
+    wsRef.current.on('finish', () => setLoaded(true));
     return () => wsRef.current.destroy();
   }, []);
 
-  // 2. Watch for changes in audio data and load it
+  // Watch for changes in props and load accordingly
   useEffect(() => {
-    if (!audioBase64 || !wsRef.current) return;
+    if (!wsRef.current) return;
 
-    const blob = base64ToBlob(audioBase64);
-    const url = URL.createObjectURL(blob);
+    let blobUrl = url;
+    let isInternalUrl = false;
 
-    wsRef.current.load(url);
-    setLoaded(true);
+    // Convert base64 to blob URL if needed
+    if (!url && base64) {
+      const byteCharacters = atob(base64);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) byteNumbers[i] = byteCharacters.charCodeAt(i);
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'audio/wav' });
+      blobUrl = URL.createObjectURL(blob);
+      isInternalUrl = true;
+    }
 
-    // Cleanup URL to avoid memory leaks
-    return () => URL.revokeObjectURL(url);
-  }, [audioBase64]);
+    if (blobUrl) {
+      wsRef.current.load(blobUrl);
+      setLoaded(true);
+    }
 
-  function base64ToBlob(b64) {
-    const byteCharacters = atob(b64);
-    const byteNumbers = new Array(byteCharacters.length);
-    for (let i = 0; i < byteCharacters.length; i++) byteNumbers[i] = byteCharacters.charCodeAt(i);
-    const byteArray = new Uint8Array(byteNumbers);
-    return new Blob([byteArray], { type: 'audio/wav' });
-  }
+    return () => {
+      if (isInternalUrl && blobUrl) URL.revokeObjectURL(blobUrl);
+    };
+  }, [url, base64]);
 
   return (
     <div>
@@ -55,24 +55,6 @@ export default function Waveform({ audioBase64 }) {
         >
           Play/Pause
         </button>
-        <a
-          className='px-3 py-1 bg-gray-200 rounded cursor-pointer'
-          onClick={(e) => {
-            if (!wsRef.current || !loaded) return;
-            // Generate blob for download on click
-            wsRef.current.getArrayBuffer().then((buf) => {
-              const blob = new Blob([buf], { type: 'audio/wav' });
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement('a');
-              a.href = url;
-              a.download = 'tuned.wav';
-              a.click();
-              URL.revokeObjectURL(url);
-            });
-          }}
-        >
-          Download
-        </a>
       </div>
     </div>
   );

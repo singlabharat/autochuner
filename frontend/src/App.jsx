@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import Waveform from './components/Waveform';
 import PitchGraph from './components/PitchGraph';
 
@@ -6,7 +6,8 @@ const KEYS = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
 export default function App() {
   const [file, setFile] = useState(null);
-  const [key, setKey] = useState('C:maj');
+  const [inputUrl, setInputUrl] = useState(null);
+  const [key, setKey] = useState('Chromatic');
   const [autoKey, setAutoKey] = useState(false);
   const [correction, setCorrection] = useState(0.5);
   const [tunedAudio, setTunedAudio] = useState(null);
@@ -15,6 +16,7 @@ export default function App() {
   const [pitchTuned, setPitchTuned] = useState([]);
   const [detectedKey, setDetectedKey] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [tunedAudioUrl, setTunedAudioUrl] = useState(null);
 
   async function handleTune() {
     if (!file) return;
@@ -32,18 +34,42 @@ export default function App() {
         return;
       }
       const json = await res.json();
+
       setTunedAudio(json.audio_base64);
       setTime(json.time || []);
       setPitchOriginal(json.pitch_original || []);
       setPitchTuned(json.pitch_tuned || []);
-
       // Handle detected key if auto key was used
-      if (json.detected_key) {
-        setDetectedKey(json.detected_key);
-      }
+      if (json.detected_key) setDetectedKey(json.detected_key);
+
+      if (inputUrl) URL.revokeObjectURL(inputUrl); // Clean old one
+      const newUrl = URL.createObjectURL(file);
+      setInputUrl(newUrl);
+      
+      // Create URL for tuned audio
+      if (tunedAudioUrl) URL.revokeObjectURL(tunedAudioUrl); // Clean old one
+      const tunedBlob = new Blob([
+        Uint8Array.from(atob(json.audio_base64), c => c.charCodeAt(0))
+      ], { type: 'audio/wav' });
+      const tunedUrl = URL.createObjectURL(tunedBlob);
+      setTunedAudioUrl(tunedUrl);
     } finally {
       setIsProcessing(false);
     }
+  }
+
+  function handleDownload() {
+    if (!tunedAudioUrl) {
+      alert('No tuned audio available for download');
+      return;
+    }
+    
+    const link = document.createElement('a');
+    link.href = tunedAudioUrl;
+    link.download = 'tuned_audio.wav';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 
   function handleFile(e) {
@@ -51,9 +77,18 @@ export default function App() {
     setFile(f);
   }
 
+  // Cleanup URL to avoid memory leaks
+  useEffect(() => {
+    return () => {
+      if (inputUrl) URL.revokeObjectURL(inputUrl);
+      if (tunedAudioUrl) URL.revokeObjectURL(tunedAudioUrl);
+    };
+  }, [inputUrl, tunedAudioUrl]);
+
   return (
     <div className='h-screen p-4 bg-gray-50'>
       <div className='max-w-6xl mx-auto h-full grid grid-cols-1 md:grid-cols-3 gap-4'>
+        {/* --- LEFT COLUMN (CONTROLS) --- */}
         <div className='bg-white p-4 rounded shadow md:col-span-1'>
           <h2 className='text-lg font-semibold mb-3'>Controls</h2>
           <div className='space-y-3'>
@@ -76,6 +111,7 @@ export default function App() {
               <div>
                 <label className='block text-sm font-medium'>Key</label>
                 <select value={key} onChange={(e) => setKey(e.target.value)} className='mt-1'>
+                  <option value='chromatic'>Chromatic</option>
                   {KEYS.map((k) => (
                     <option key={k} value={`${k}:maj`}>
                       {k} Major
@@ -138,21 +174,37 @@ export default function App() {
           </div>
         </div>
 
-        <div className='bg-white p-4 rounded shadow flex flex-col md:col-span-2'>
-          {/* Initial content when no file is processed */}
+        {/* --- RIGHT COLUMN (VISUALS) --- */}
+        <div className='bg-white p-4 rounded shadow flex flex-col md:col-span-2 overflow-y-auto'>
           {time.length === 0 && !tunedAudio ? (
             <div className='flex flex-col items-center justify-center h-full text-center'>
               <h1 className='text-3xl font-bold text-gray-800 mb-4'>Autotuner</h1>
-              <p className='text-gray-600 max-w-md'>
-                A web-based audio pitch correction tool that allows you to upload audio files,
-                select a musical key, and automatically tune your audio to the desired key.
-                Visualize both original and tuned pitch contours.
-              </p>
+              <p className='text-gray-600 max-w-md'>A web-based audio pitch correction tool...</p>
             </div>
           ) : (
             <div className='flex-1'>
-              <h2 className='text-lg font-semibold mb-3'>Output Audio</h2>
-              <Waveform audioBase64={tunedAudio} />
+              {inputUrl && (
+                <div className='mb-6'>
+                  <h2 className='text-lg font-semibold mb-3'>Input Audio</h2>
+                  <Waveform url={inputUrl} />
+                </div>
+              )}
+
+              <div className='mb-6'>
+                <div className='flex justify-between items-center'>
+                  <h2 className='text-lg font-semibold mb-3'>Output Audio</h2>
+                  {tunedAudioUrl && (
+                    <button
+                      className='px-3 py-1 bg-blue-600 text-white rounded text-sm'
+                      onClick={handleDownload}
+                    >
+                      Download Tuned Audio
+                    </button>
+                  )}
+                </div>
+                <Waveform base64={tunedAudio} />
+              </div>
+
               <div className='mt-4'>
                 <PitchGraph time={time} original={pitchOriginal} tuned={pitchTuned} />
               </div>
