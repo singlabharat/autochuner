@@ -4,6 +4,5 @@ numpy
 librosa
 soundfile
 scipy
-matplotlib
 psola
 python-multipart
