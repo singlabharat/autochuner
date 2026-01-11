@@ -3,13 +3,13 @@ import Waveform from './components/Waveform';
 import PitchGraph from './components/PitchGraph';
 
 const NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-const MODES = ['Major', 'Minor', 'Chromatic'];
+const MODES = ['maj', 'min', 'chr'];
 
 export default function App() {
   const [file, setFile] = useState(null);
   const [inputUrl, setInputUrl] = useState(null);
   const [note, setNote] = useState('C');
-  const [mode, setMode] = useState('Major');
+  const [mode, setMode] = useState('maj');
   const [autoKey, setAutoKey] = useState(false);
   const [correction, setCorrection] = useState(0.5);
   const [tunedAudio, setTunedAudio] = useState(null);
@@ -200,12 +200,12 @@ export default function App() {
                     >
                       {MODES.map((m) => (
                         <option key={m} value={m}>
-                          {m}
+                          {m === 'maj' ? 'Major' : m === 'min' ? 'Minor' : 'Chromatic'}
                         </option>
                       ))}
                     </select>
                   </div>
-                  {mode !== 'Chromatic' && (
+                  {mode !== 'chr' && (
                     <div>
                       <label className='block text-sm font-medium mb-2'>Note</label>
                       <select
