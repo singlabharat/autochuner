@@ -1,7 +1,5 @@
-from functools import partial
 from pathlib import Path
 import librosa
-import librosa.display
 import numpy as np
 import matplotlib.pyplot as plt
 import soundfile as sf
@@ -28,6 +26,42 @@ def interpolate_nans(x):
     
     # Interpolate using numpy
     return np.interp(all_indices, valid_indices, x[valid_mask])
+
+
+def smooth_pitch_contours(pitch_array, window_length=11, polyorder=3):
+    """
+    Apply Savitzky-Golay filter to smooth pitch contours.
+    This helps reduce jagged lines in the pitch plot while preserving the overall shape.
+    """
+    from scipy.signal import savgol_filter
+    
+    # Only apply smoothing to valid (non-NaN) values
+    valid_mask = ~np.isnan(pitch_array)
+    if not np.any(valid_mask):
+        return pitch_array  # Return as-is if all values are NaN
+    
+    # Create a copy of the array to avoid modifying the original
+    smoothed_pitch = pitch_array.copy()
+    
+    # Apply smoothing only if we have enough valid points
+    if np.sum(valid_mask) >= window_length:
+        # Apply Savitzky-Golay filter to valid values only
+        # We need to handle segments separately to avoid smoothing across silences
+        smoothed_values = savgol_filter(pitch_array[valid_mask], window_length, polyorder)
+        smoothed_pitch[valid_mask] = smoothed_values
+    
+    return smoothed_pitch
+
+
+def compress_audio(audio, gain_db=5.0):
+    """
+    Boosts volume and gently squashes peaks.
+    """
+    linear_gain = 10**(gain_db / 20.0)
+    
+    amped_audio = audio * linear_gain
+    
+    return np.tanh(np.tanh(amped_audio))
 
 def get_target_pitch(f0, scale=None):
     """
@@ -101,7 +135,7 @@ def detect_key(f0):
 def autotune(audio, sr, scale, alpha, plot):
     frame_length = 2048
     hop_length = frame_length // 2
-    fmin = librosa.note_to_hz('C2')
+    fmin = librosa.note_to_hz('G1')
     fmax = librosa.note_to_hz('C8')
 
     # Track Pitch
@@ -116,7 +150,7 @@ def autotune(audio, sr, scale, alpha, plot):
         hop_length=hop_length
     )[0]
 
-    energy_threshold = 0.01 * np.max(rms)
+    energy_threshold = 0.02 * np.max(rms)
 
     # Set f0 to NaN for silent frames
     f0[rms < energy_threshold] = np.nan
@@ -125,6 +159,8 @@ def autotune(audio, sr, scale, alpha, plot):
     if scale is None:
         scale = detect_key(f0)
         print(f"Detected Key: {scale}")
+        # Store the detected key in module for access from main.py
+        globals()['detected_key'] = scale
 
     # Interpolate NaNs (Fixes PSOLA issues)
     f0_continuous = interpolate_nans(f0)
@@ -136,7 +172,7 @@ def autotune(audio, sr, scale, alpha, plot):
     delta = target_f0 - f0_continuous
 
     # Smooth the Delta (Savgol Filter)
-    smoothed_delta = sig.savgol_filter(delta, window_length=11, polyorder=3)
+    smoothed_delta = sig.savgol_filter(delta, window_length=7, polyorder=3)
 
     # Apply Correction with Strength (Alpha)
     corrected_f0 = f0_continuous + (smoothed_delta * alpha)
@@ -160,11 +196,19 @@ def autotune(audio, sr, scale, alpha, plot):
     # PSOLA receives the clean, interpolated, naturally corrected pitch
     processed = psola.vocode(audio, sample_rate=int(sr), target_pitch=corrected_f0, fmin=fmin, fmax=fmax)
 
+    # Compress the dynamic range to make loud parts quieter and quiet parts louder
+    processed = compress_audio(processed)
+
     # Create a time axis for frames (seconds)
     time_points = librosa.frames_to_time(np.arange(len(f0)), sr=sr, hop_length=hop_length)
 
+    # Apply smoothing to the pitch data for better visualization in frontend
+    # This preserves the original processing for audio but smooths the visualization
+    f0_smoothed = smooth_pitch_contours(f0.copy())
+    corrected_f0_smoothed = smooth_pitch_contours(corrected_f0.copy())
+
     # Return processed audio plus pitch diagnostics
-    return processed, sr, time_points, f0, corrected_f0
+    return processed, sr, time_points, f0_smoothed, corrected_f0_smoothed
 
 def main():
     # filepath = Path("audio/tumko_dekha.mp3")
