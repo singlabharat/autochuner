@@ -1,7 +1,6 @@
 from pathlib import Path
 import librosa
 import numpy as np
-import matplotlib.pyplot as plt
 import soundfile as sf
 import scipy.signal as sig
 import psola
@@ -177,21 +176,6 @@ def autotune(audio, sr, scale, alpha, plot):
     # Apply Correction with Strength (Alpha)
     corrected_f0 = f0_continuous + (smoothed_delta * alpha)
 
-    if plot:
-        stft = librosa.stft(audio, n_fft=frame_length, hop_length=hop_length)
-        time_points = librosa.times_like(stft, sr=sr, hop_length=hop_length)
-
-        plt.figure(figsize=(15, 6))
-        plt.plot(time_points, f0, label="original f0", linewidth=2)
-        plt.plot(time_points, corrected_f0, label="corrected f0", linewidth=1)
-        plt.xlabel("Time (s)")
-        plt.ylabel("Frequency (Hz)")
-        plt.legend()
-        plt.tight_layout()
-        plt.savefig("pitch_correction.png", dpi=300)
-        plt.close()
-
-
     # Pitch-shifting (PSOLA)
     # PSOLA receives the clean, interpolated, naturally corrected pitch
     processed = psola.vocode(audio, sample_rate=int(sr), target_pitch=corrected_f0, fmin=fmin, fmax=fmax)
@@ -220,7 +204,7 @@ def main():
     # target_scale = 'chromatic'
     
     # alpha=1.0 is hard correction (but smoothed), alpha=0.5 is subtle
-    processed, sr_out, time_points, f0, corrected_f0 = autotune(y, sr, scale=None, alpha=1, plot=True)
+    processed, sr_out, time_points, f0, corrected_f0 = autotune(y, sr, scale=None, alpha=1)
 
     filepath = filepath.parent / (filepath.stem + '_natural_tuned' + filepath.suffix)
     sf.write(str(filepath), processed, sr_out)

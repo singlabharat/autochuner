@@ -3,13 +3,13 @@ import Waveform from './components/Waveform';
 import PitchGraph from './components/PitchGraph';
 
 const NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-const MODES = ['maj', 'min'];
+const MODES = ['Major', 'Minor', 'Chromatic'];
 
 export default function App() {
   const [file, setFile] = useState(null);
   const [inputUrl, setInputUrl] = useState(null);
   const [note, setNote] = useState('C');
-  const [mode, setMode] = useState('maj');
+  const [mode, setMode] = useState('Major');
   const [autoKey, setAutoKey] = useState(false);
   const [correction, setCorrection] = useState(0.5);
   const [tunedAudio, setTunedAudio] = useState(null);
@@ -26,7 +26,7 @@ export default function App() {
     setIsProcessing(true);
     const form = new FormData();
     form.append('audio_file', file);
-    form.append('key', autoKey ? 'None' : `${note}:${mode}`);
+    form.append('key', autoKey ? 'None' : mode === 'Chromatic' ? 'chromatic' : `${note}:${mode}`);
     form.append('auto_key', autoKey ? '1' : '0');
     form.append('correction', String(correction));
 
@@ -192,20 +192,6 @@ export default function App() {
               {!autoKey && (
                 <div className='grid grid-cols-2 gap-3'>
                   <div>
-                    <label className='block text-sm font-medium mb-2'>Note</label>
-                    <select
-                      value={note}
-                      onChange={(e) => setNote(e.target.value)}
-                      className='input w-full'
-                    >
-                      {NOTES.map((n) => (
-                        <option key={n} value={n}>
-                          {n}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
                     <label className='block text-sm font-medium mb-2'>Mode</label>
                     <select
                       value={mode}
@@ -214,11 +200,27 @@ export default function App() {
                     >
                       {MODES.map((m) => (
                         <option key={m} value={m}>
-                          {m === 'maj' ? 'Major' : 'Minor'}
+                          {m}
                         </option>
                       ))}
                     </select>
                   </div>
+                  {mode !== 'Chromatic' && (
+                    <div>
+                      <label className='block text-sm font-medium mb-2'>Note</label>
+                      <select
+                        value={note}
+                        onChange={(e) => setNote(e.target.value)}
+                        className='input w-full'
+                      >
+                        {NOTES.map((n) => (
+                          <option key={n} value={n}>
+                            {n}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </div>
               )}
 
