@@ -52,6 +52,7 @@ def smooth_pitch_contours(pitch_array, window_length=11, polyorder=3):
     
     return smoothed_pitch
 
+
 def get_target_pitch(f0, scale=None):
     """
     Returns the 'perfect' snapped pitch for each frame without smoothing.
@@ -81,34 +82,27 @@ def detect_key(f0):
     Detects the key that minimizes the total pitch correction error.
     Returns a string like 'C:maj', 'F#:maj', etc.
     """
-    # We only need to check the 12 Major keys.
-    # (Relative minors share the same notes, so they are mathematically equivalent for tuning).
     chromatic_notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
     
     # Filter out NaNs to calculate error on voiced segments only
     valid_f0 = f0[~np.isnan(f0)]
     
     min_error = float('inf')
-    best_scale = 'C:maj'
+    best_major_idx = 0
 
-    # Convert to MIDI once to save time
-    midi_f0 = librosa.hz_to_midi(valid_f0)
+    # Convert to MIDI
+    midi_f0 = librosa.hz_to_midi(valid_f0) % SEMITONES_IN_OCTAVE
     
     # Check all 12 Major keys
-    for note in chromatic_notes:
+    for i, note in enumerate(chromatic_notes):
         scale_name = f"{note}:maj"
         
-        # Get the allowed degrees for this scale
         degrees = librosa.key_to_degrees(scale_name)
         # Add octave for correct wrapping
         degrees = np.concatenate((degrees, [degrees[0] + SEMITONES_IN_OCTAVE]))
         
-        # Map input pitch class to 0-12 range
-        degree_vals = midi_f0 % SEMITONES_IN_OCTAVE
-        
         # Find distance to nearest allowed degree
-        # Broadcasting: (N_samples, 1) - (1, N_degrees)
-        distances = np.abs(degree_vals[:, np.newaxis] - degrees[np.newaxis, :])
+        distances = np.abs(midi_f0[:, np.newaxis] - degrees[np.newaxis, :])
         min_dists = np.min(distances, axis=1)
         
         # Sum the errors (how much we would have to tune)
@@ -117,9 +111,26 @@ def detect_key(f0):
         # Update winner
         if total_error < min_error:
             min_error = total_error
-            best_scale = scale_name
+            best_major_idx = i
 
-    return best_scale
+    major_tonic = best_major_idx
+    major_dom = (best_major_idx + 7) % 12
+    
+    minor_tonic = (best_major_idx - 3) % 12
+    minor_dom = (minor_tonic + 7) % 12
+
+    def count_hits(target_idx):
+        dist = np.abs(midi_f0 - target_idx)
+        dist = np.minimum(dist, 12 - dist)
+        return np.sum(dist < 0.5)
+
+    maj_score = count_hits(major_tonic) * 1.0 + count_hits(major_dom) * 0.5
+    min_score = count_hits(minor_tonic) * 1.0 + count_hits(minor_dom) * 0.5
+    
+    # Decide between major or its relative minor
+    if min_score > maj_score:
+        return f'{chromatic_notes[minor_tonic]}:min'
+    return f'{chromatic_notes[major_tonic]}:maj'
 
 def autotune(audio, sr, scale, alpha, plot):
     frame_length = 2048

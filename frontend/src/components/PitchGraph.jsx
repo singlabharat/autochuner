@@ -21,7 +21,7 @@ export default function PitchGraph({ time = [], original = [], tuned = [] }) {
         y: original,
         mode: 'lines',
         name: 'Original',
-        line: { dash: 'solid' },
+        line: { dash: 'solid', width: 2, color: '#ef4444' }, // red for original
         connectgaps: false,
       });
     }
@@ -31,18 +31,42 @@ export default function PitchGraph({ time = [], original = [], tuned = [] }) {
         y: tuned,
         mode: 'lines',
         name: 'Tuned',
-        line: { dash: 'solid' },
+        line: { dash: 'solid', width: 2, color: '#10b981' }, // green for tuned
         connectgaps: false,
       });
     }
 
     // Get all unique MIDI values for the y-axis
     const allYValues = [...original, ...tuned].filter((y) => y !== null && !isNaN(y));
+
+    // Set colors based on dark/light mode
+    const isDarkMode = document.documentElement.classList.contains('dark');
+    const backgroundColor = isDarkMode ? '#1f2937' : '#ffffff';
+    const textColor = isDarkMode ? '#e2e8f0' : '#1f2937';
+    const gridColor = isDarkMode ? '#4b5563' : '#d1d5db';
+
     if (allYValues.length === 0) {
       const layout = {
-        margin: { t: 20, l: 40, r: 20, b: 40 },
-        xaxis: { title: 'Time (s)' },
-        yaxis: { title: 'Note' },
+        margin: { t: 30, l: 60, r: 20, b: 50 },
+        paper_bgcolor: backgroundColor,
+        plot_bgcolor: backgroundColor,
+        font: { color: textColor },
+        xaxis: {
+          title: 'Time (s)',
+          gridcolor: gridColor,
+          showgrid: true,
+          zerolinecolor: gridColor,
+        },
+        yaxis: {
+          title: 'Note',
+          gridcolor: gridColor,
+          showgrid: true,
+          zerolinecolor: gridColor,
+        },
+        showlegend: true,
+        legend: {
+          font: { color: textColor },
+        },
       };
       Plotly.react(ref.current, traces, layout, { responsive: true });
       return;
@@ -63,16 +87,33 @@ export default function PitchGraph({ time = [], original = [], tuned = [] }) {
     }
 
     const layout = {
-      margin: { t: 20, l: 60, r: 20, b: 40 },
-      xaxis: { title: 'Time (s)' },
+      margin: { t: 30, l: 60, r: 20, b: 50 },
+      paper_bgcolor: backgroundColor,
+      plot_bgcolor: backgroundColor,
+      font: { color: textColor },
+      xaxis: {
+        title: 'Time (s)',
+        gridcolor: gridColor,
+        showgrid: true,
+        zerolinecolor: gridColor,
+      },
       yaxis: {
         title: 'Note',
         tickvals: yTickVals,
         ticktext: yTickTexts,
+        gridcolor: gridColor,
+        showgrid: true,
+        zerolinecolor: gridColor,
+      },
+      showlegend: true,
+      legend: {
+        font: { color: textColor },
       },
     };
     Plotly.react(ref.current, traces, layout, { responsive: true });
   }, [time, original, tuned]);
 
-  return <div ref={ref} style={{ width: '100%', height: 400 }} />;
+  return (
+    <div ref={ref} style={{ width: '100%', height: 400 }} className='rounded-lg overflow-hidden' />
+  );
 }
