@@ -54,7 +54,9 @@ export default function PitchGraph({ time = [], original = [], tuned = [] }) {
         xaxis: {
           title: 'Time (s)',
           gridcolor: gridColor,
-          showgrid: true,
+          showgrid: false, // Remove vertical grid lines
+          showline: true,
+          linecolor: gridColor,
           zerolinecolor: gridColor,
         },
         yaxis: {
@@ -94,7 +96,9 @@ export default function PitchGraph({ time = [], original = [], tuned = [] }) {
       xaxis: {
         title: 'Time (s)',
         gridcolor: gridColor,
-        showgrid: true,
+        showgrid: false, // Remove vertical grid lines
+        showline: true,
+        linecolor: gridColor,
         zerolinecolor: gridColor,
       },
       yaxis: {

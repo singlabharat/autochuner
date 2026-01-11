@@ -99,7 +99,7 @@ export default function App() {
         {/* Header */}
         <header className='flex justify-between items-center mb-6'>
           <h1 className='text-3xl font-bold bg-gradient-to-r from-indigo-500 to-purple-600 bg-clip-text text-transparent'>
-            AutoTuner
+            AutoChuner
           </h1>
           <button
             onClick={() => setDarkMode(!darkMode)}
@@ -227,10 +227,9 @@ export default function App() {
               )}
 
               <div>
-                <div className='flex justify-between items-center mb-2'>
-                  <label className='block text-sm font-medium'>Correction: {correction}</label>
-                  <span className='text-xs text-gray-400'>{Math.round(correction * 100)}%</span>
-                </div>
+                <label className='block text-sm font-medium'>
+                  Correction: {Math.round(correction * 100)}%
+                </label>
                 <input
                   type='range'
                   min='0'
@@ -316,9 +315,9 @@ export default function App() {
                     />
                   </svg>
                 </div>
-                <h2 className='text-2xl font-bold mb-2'>Welcome to AutoTuner</h2>
+                <h2 className='text-2xl font-bold mb-2'>Welcome to AutoChuner</h2>
                 <p className='text-gray-500 max-w-md'>
-                  Upload an audio file to begin pitch correction and visualization
+                  Upload an audio file to begin pitch correction and visualisation
                 </p>
               </div>
             ) : (
