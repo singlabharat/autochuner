@@ -2,7 +2,7 @@
 title: AutoChuner
 emoji: '⚡'
 colorFrom: 'purple'
-colorTo: 'white'
+colorTo: 'indigo'
 sdk: 'docker'
 sdk_version: 'latest'
 app_file: Dockerfile
