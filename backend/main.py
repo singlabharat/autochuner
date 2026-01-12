@@ -7,7 +7,7 @@ import numpy as np
 import soundfile as sf
 import librosa
 
-import autotuner as at
+import backend.autotuner as at
 
 app = FastAPI()
 
