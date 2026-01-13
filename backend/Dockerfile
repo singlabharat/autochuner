@@ -4,14 +4,14 @@ FROM python:3.10-slim
 # Set working directory inside container
 WORKDIR /app
 
-# Copy only the backend folder to keep container small
-COPY backend/ /app/backend/
+# Copy everything (this is already only backend after subtree push)
+COPY . /app
 
-# Install backend dependencies
-RUN pip install --no-cache-dir -r backend/requirements.txt
+# Install dependencies
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Expose the port Hugging Face Spaces expects
 EXPOSE 7860
 
-# Command to run FastAPI via Uvicorn
-CMD ["uvicorn", "backend.app:app", "--host", "0.0.0.0", "--port", "7860"]
+# Run FastAPI
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "7860"]
