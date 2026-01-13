@@ -31,7 +31,7 @@ export default function App() {
     form.append('correction', String(correction));
 
     try {
-      const res = await fetch('https://singlabharat-autochuner.hf.space/autotune', {
+      const res = await fetch('https://singlabharat-autochuner.hf.space/tune', {
         method: 'POST',
         body: form,
       });
