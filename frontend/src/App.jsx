@@ -31,7 +31,7 @@ export default function App() {
     form.append('correction', String(correction));
 
     try {
-      const res = await fetch('https://autochuner.onrender.com/tune', {
+      const res = await fetch('https://singlabharat-autochuner.hf.space/autotune', {
         method: 'POST',
         body: form,
       });
