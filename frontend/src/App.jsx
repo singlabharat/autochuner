@@ -5,6 +5,9 @@ import PitchGraph from './components/PitchGraph';
 const NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 const MODES = ['maj', 'min', 'chr'];
 
+// Backend URL for API calls
+const BACKEND_URL = 'https://singlabharat-autochuner.hf.space';
+
 export default function App() {
   const [file, setFile] = useState(null);
   const [inputUrl, setInputUrl] = useState(null);
@@ -20,6 +23,48 @@ export default function App() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [tunedAudioUrl, setTunedAudioUrl] = useState(null);
   const [darkMode, setDarkMode] = useState(true);
+  const [serverStatus, setServerStatus] = useState('checking'); // 'checking', 'online', 'offline'
+
+  // Function to check server health
+  const checkHealth = async () => {
+    try {
+      const res = await fetch(`${BACKEND_URL}/health`);
+      const data = await res.json();
+      
+      if (data.ok) {
+        setServerStatus('online');
+        return true;
+      } else {
+        setServerStatus('offline');
+        return false;
+      }
+    } catch (error) {
+      console.error('Health check failed:', error);
+      setServerStatus('offline');
+      return false;
+    }
+  };
+
+  // Function to warm up the server
+  const warmUpServer = async () => {
+    await checkHealth();
+  };
+
+  // Set up periodic health checks to keep server active
+  useEffect(() => {
+    // Warm up server on initial load
+    warmUpServer();
+
+    // Set up interval to ping server every 5 minutes to keep it active
+    const healthCheckInterval = setInterval(async () => {
+      await checkHealth();
+    }, 3 * 60 * 1000); // 3 minutes
+
+    // Cleanup interval on component unmount
+    return () => {
+      clearInterval(healthCheckInterval);
+    };
+  }, []);
 
   async function handleTune() {
     if (!file) return;
@@ -31,7 +76,7 @@ export default function App() {
     form.append('correction', String(correction));
 
     try {
-      const res = await fetch('https://singlabharat-autochuner.hf.space/tune', {
+      const res = await fetch(`${BACKEND_URL}/tune`, {
         method: 'POST',
         body: form,
       });
@@ -60,6 +105,9 @@ export default function App() {
       );
       const tunedUrl = URL.createObjectURL(tunedBlob);
       setTunedAudioUrl(tunedUrl);
+    } catch (error) {
+      console.error('Error during tuning:', error);
+      alert('An error occurred during tuning. Please try again.');
     } finally {
       setIsProcessing(false);
     }
