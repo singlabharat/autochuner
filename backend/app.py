@@ -11,7 +11,7 @@ import autotuner as at
 
 app = FastAPI()
 
-@app.get("/health")
+@app.get("/")
 def health():
     return {"ok": True}
 
@@ -42,30 +42,21 @@ def tune(
     audio_file: UploadFile = File(...),
     key: str = Form(None),
     auto_key: str = Form('0'),
-    correction: float = Form(1.0),
+    correction: float = Form(0.5),
 ):
-    # 1. Load Audio Efficiently
-    # We read directly from the spool to avoid duplicating memory
+    # Load Audio with error handling
     try:
-        # Try SoundFile first (Fastest)
-        audio, sr = sf.read(audio_file.file)
-    except Exception:
-        # Fallback to Librosa (Slower, but handles more formats)
-        # Reset file pointer to start
-        audio_file.file.seek(0)
-        audio, sr = librosa.load(audio_file.file, sr=None, mono=False)
+        audio, sr = librosa.load(audio_file.file, sr=22050, mono=True)
+    except Exception as e:
+        return JSONResponse({'error': 'Please upload a supported format (WAV, MP3, etc.)'}, status_code=400)
 
-    if audio.ndim > 1:
-        audio = np.mean(audio, axis=1)
+    # Setup Parameters
+    scale = None if auto_key == '1' else key
 
-    # 2. Setup Parameters
-    scale = None if auto_key == '1' else (key or None)
-    original_scale = scale  # Store original scale to check if auto-detection was used
-
-    # 3. Run DSP (The heavy lifting)
+    # Run DSP (The heavy lifting)
     try:
         processed, sr_out, time_points, f0, corrected_f0 = at.autotune(
-            audio, sr, scale, correction, plot=False
+            audio, sr, scale, correction
         )
         # Get the actual scale used (will be the detected key if scale was None)
         actual_scale = scale if scale is not None else getattr(at, 'detected_key', 'C:maj')
@@ -74,13 +65,13 @@ def tune(
         traceback.print_exc()
         return JSONResponse({'error': str(e)}, status_code=500)
 
-    # 4. Export Audio
+    # Export Audio
     out_buf = io.BytesIO()
     sf.write(out_buf, processed, sr_out, format='WAV')
     b64 = base64.b64encode(out_buf.getvalue()).decode('ascii')
 
-    # 5. Process Pitch Data (Vectorized Optimization)
-    # Convert Hz to MIDI in one go (fast C-level loop inside numpy)
+    # Process Pitch Data (Vectorized Optimization)
+    # Convert Hz to MIDI in one go
     pitch_original_midi = librosa.hz_to_midi(f0)
     pitch_tuned_midi = librosa.hz_to_midi(corrected_f0)
 
@@ -91,7 +82,7 @@ def tune(
     # Prepare response
     response_data = {
         'audio_base64': b64,
-        'time': time_points.tolist(), # fast numpy to list
+        'time': time_points.tolist(),
         'pitch_original': pitch_original,
         'pitch_tuned': pitch_tuned,
     }

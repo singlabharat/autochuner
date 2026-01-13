@@ -28,9 +28,9 @@ export default function App() {
   // Function to check server health
   const checkHealth = async () => {
     try {
-      const res = await fetch(`${BACKEND_URL}/health`);
+      const res = await fetch(`${BACKEND_URL}/`);
       const data = await res.json();
-      
+
       if (data.ok) {
         setServerStatus('online');
         return true;
@@ -56,9 +56,7 @@ export default function App() {
     warmUpServer();
 
     // Set up interval to ping server every 5 minutes to keep it active
-    const healthCheckInterval = setInterval(async () => {
-      await checkHealth();
-    }, 3 * 60 * 1000); // 3 minutes
+    const healthCheckInterval = setInterval(warmUpServer, 3 * 60 * 1000); // 3 minutes
 
     // Cleanup interval on component unmount
     return () => {
@@ -81,7 +79,8 @@ export default function App() {
         body: form,
       });
       if (!res.ok) {
-        alert('Tune failed');
+        const errorData = await res.json();
+        alert(errorData.error || 'Tune failed');
         return;
       }
       const json = await res.json();

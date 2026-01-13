@@ -1,7 +1,5 @@
-from pathlib import Path
 import librosa
 import numpy as np
-import soundfile as sf
 import scipy.signal as sig
 import psola
 
@@ -131,11 +129,11 @@ def detect_key(f0):
         return f'{chromatic_notes[minor_tonic]}:min'
     return f'{chromatic_notes[major_tonic]}:maj'
 
-def autotune(audio, sr, scale, alpha, plot):
+def autotune(audio, sr, scale, alpha):
     frame_length = 2048
     hop_length = frame_length // 2
-    fmin = librosa.note_to_hz('G1')
-    fmax = librosa.note_to_hz('C8')
+    fmin = librosa.note_to_hz('C2')
+    fmax = librosa.note_to_hz('C7')
 
     # Track Pitch
     f0, _, _ = librosa.pyin(
@@ -188,26 +186,10 @@ def autotune(audio, sr, scale, alpha, plot):
     f0_smoothed = smooth_pitch_contours(f0.copy())
     corrected_f0_smoothed = smooth_pitch_contours(corrected_f0.copy())
 
-    # Return processed audio plus pitch diagnostics
     return processed, sr, time_points, f0_smoothed, corrected_f0_smoothed
 
 def main():
-    # filepath = Path("audio/tumko_dekha.mp3")
-    filepath = Path("audio/aapki_amit.mp3")
-    
-    # Load audio
-    y, sr = librosa.load(str(filepath), sr=None, mono=False)
-    if y.ndim > 1:
-        y = y[0, :]
-
-    # target_scale = 'C:maj'
-    # target_scale = 'chromatic'
-    
-    # alpha=1.0 is hard correction (but smoothed), alpha=0.5 is subtle
-    processed, sr_out, time_points, f0, corrected_f0 = autotune(y, sr, scale=None, alpha=1)
-
-    filepath = filepath.parent / (filepath.stem + '_natural_tuned' + filepath.suffix)
-    sf.write(str(filepath), processed, sr_out)
+    pass
 
 if __name__=='__main__':
     main()
