@@ -69,7 +69,7 @@ export default function App() {
     setIsProcessing(true);
     const form = new FormData();
     form.append('audio_file', file);
-    form.append('key', autoKey ? 'None' : mode === 'Chromatic' ? 'chromatic' : `${note}:${mode}`);
+    form.append('key', autoKey ? 'None' : mode === 'chr' ? 'chromatic' : `${note}:${mode}`);
     form.append('auto_key', autoKey ? '1' : '0');
     form.append('correction', String(correction));
 
