@@ -25,7 +25,7 @@ def interpolate_nans(x):
     return np.interp(all_indices, valid_indices, x[valid_mask])
 
 
-def smooth_pitch_contours(pitch_array, window_length=11, polyorder=3):
+def smooth_pitch_contours(pitch_array, window_length=15, polyorder=3):
     """
     Apply Savitzky-Golay filter to smooth pitch contours.
     This helps reduce jagged lines in the pitch plot while preserving the overall shape.
@@ -34,8 +34,6 @@ def smooth_pitch_contours(pitch_array, window_length=11, polyorder=3):
     
     # Only apply smoothing to valid (non-NaN) values
     valid_mask = ~np.isnan(pitch_array)
-    if not np.any(valid_mask):
-        return pitch_array  # Return as-is if all values are NaN
     
     # Create a copy of the array to avoid modifying the original
     smoothed_pitch = pitch_array.copy()
@@ -47,7 +45,7 @@ def smooth_pitch_contours(pitch_array, window_length=11, polyorder=3):
         smoothed_values = savgol_filter(pitch_array[valid_mask], window_length, polyorder)
         smoothed_pitch[valid_mask] = smoothed_values
     
-    return smoothed_pitch
+    return np.mean([pitch_array, smoothed_pitch], axis=0)
 
 
 def get_target_pitch(f0, scale=None):
@@ -132,8 +130,8 @@ def detect_key(f0):
 def autotune(audio, sr, scale, alpha):
     frame_length = 2048
     hop_length = frame_length // 2
-    fmin = librosa.note_to_hz('C2')
-    fmax = librosa.note_to_hz('C7')
+    fmin = librosa.note_to_hz('A1')
+    fmax = librosa.note_to_hz('A6')
 
     # Track Pitch
     f0, _, _ = librosa.pyin(
@@ -169,7 +167,7 @@ def autotune(audio, sr, scale, alpha):
     delta = target_f0 - f0_continuous
 
     # Smooth the Delta (Savgol Filter)
-    smoothed_delta = sig.savgol_filter(delta, window_length=7, polyorder=3)
+    smoothed_delta = smooth_pitch_contours(delta)
 
     # Apply Correction with Strength (Alpha)
     corrected_f0 = f0_continuous + (smoothed_delta * alpha)
@@ -183,13 +181,36 @@ def autotune(audio, sr, scale, alpha):
 
     # Apply smoothing to the pitch data for better visualization in frontend
     # This preserves the original processing for audio but smooths the visualization
-    f0_smoothed = smooth_pitch_contours(f0.copy())
-    corrected_f0_smoothed = smooth_pitch_contours(corrected_f0.copy())
+    f0_smoothed = smooth_pitch_contours(f0)
+    corrected_f0_smoothed = smooth_pitch_contours(corrected_f0)
 
     return processed, sr, time_points, f0_smoothed, corrected_f0_smoothed
 
 def main():
-    pass
+    import librosa
+    import soundfile as sf
+    
+    # Load audio from absolute path
+    audio_file = "C:\\Users\\BHARAT SINGLA\\Documents\\DSP\\audio\\see_you_again.wav"
+    
+    try:
+        audio, sr = librosa.load(audio_file, sr=22050, mono=True)
+        print(f"Audio loaded successfully: {len(audio)} samples, {sr}Hz")
+        
+        scale = None
+        correction = 0.8
+        
+        processed, sr_out, time_points, f0, corrected_f0 = autotune(audio, sr, scale, correction)
+        
+        # Save the result
+        sf.write("processed_output.wav", processed, sr_out)
+        print("Processing completed and output saved as processed_output.wav")
+        
+    except FileNotFoundError:
+        print(f"Error: Could not find audio file at {audio_file}")
+        print("Please make sure the file exists at the specified path.")
+    except Exception as e:
+        print(f"Error during processing: {str(e)}")
 
 if __name__=='__main__':
     main()
