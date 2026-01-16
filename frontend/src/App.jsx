@@ -216,7 +216,7 @@ export default function App() {
                 <div className='relative'>
                   <input
                     type='file'
-                    accept='audio/*'
+                    accept='audio/*, .m4a, .mp3, .wav, audio/mp4, audio/x-m4a'
                     onChange={handleFile}
                     className='input file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700'
                   />
