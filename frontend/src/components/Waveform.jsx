@@ -13,14 +13,18 @@ export default function Waveform({ url, base64 }) {
     const waveColor = isDarkMode ? '#60a5fa' : '#93c5fd'; // light blue
     const progressColor = isDarkMode ? '#3b82f6' : '#2563eb'; // blue
 
+    // Adjust height based on screen size
+    const isMobile = window.innerWidth < 768;
+    const waveformHeight = isMobile ? 80 : 100;
+
     wsRef.current = WaveSurfer.create({
       container: containerRef.current,
       waveColor: waveColor,
       progressColor: progressColor,
-      height: 100,
+      height: waveformHeight,
       cursorWidth: 2,
-      barWidth: 2,
-      barGap: 1,
+      barWidth: isMobile ? 1 : 2,
+      barGap: isMobile ? 0.5 : 1,
       barRadius: 2,
     });
 
@@ -79,7 +83,7 @@ export default function Waveform({ url, base64 }) {
       <div ref={containerRef} />
       <div className='mt-3 flex justify-center'>
         <button
-          className='btn-icon p-3'
+          className='btn-icon p-4 sm:p-3 w-14 h-14 sm:w-auto sm:h-auto flex items-center justify-center'
           onClick={togglePlayPause}
           title={isPlaying ? 'Pause' : 'Play'}
         >

@@ -2,6 +2,42 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Mobile-first responsive fixes */
+@media (max-width: 768px) {
+  /* Improve touch targets */
+  .btn-icon {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* Better spacing on mobile */
+  .card {
+    padding: 1rem;
+  }
+
+  h1 {
+    font-size: 1.875rem; /* text-3xl equivalent but slightly smaller for mobile */
+  }
+
+  h2 {
+    font-size: 1.25rem; /* text-xl equivalent but slightly smaller for mobile */
+  }
+
+  /* Override fixed height for mobile to allow proper stacking */
+  [class*='h-\\[calc\\(100vh-120px\\)\\]'] {
+    height: auto !important;
+  }
+
+  [class*='h-full']:not(.btn-icon) {
+    height: auto !important;
+  }
+
+  /* Ensure proper overflow handling on mobile */
+  [class*='overflow-y-auto'] {
+    overflow-y: visible !important;
+  }
+}
+
 html,
 body,
 #root {
@@ -34,7 +70,7 @@ body {
 
 /* Button styles */
 .btn {
-  @apply px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2;
+  @apply px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 min-h-[44px]; /* Minimum touch target size */
 }
 
 .btn-primary {
@@ -46,7 +82,7 @@ body {
 }
 
 .btn-icon {
-  @apply p-2 rounded-lg hover:bg-gray-700 transition-colors;
+  @apply p-2 rounded-lg hover:bg-gray-700 transition-colors min-w-[44px] min-h-[44px]; /* Minimum touch target size for accessibility */
 }
 
 /* Card styles */

@@ -118,6 +118,10 @@ export default function PitchGraph({ time = [], original = [], tuned = [] }) {
   }, [time, original, tuned]);
 
   return (
-    <div ref={ref} style={{ width: '100%', height: 400 }} className='rounded-lg overflow-hidden' />
+    <div
+      ref={ref}
+      style={{ width: '100%', height: window.innerWidth < 768 ? 300 : 400 }}
+      className='rounded-lg overflow-hidden'
+    />
   );
 }

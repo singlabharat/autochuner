@@ -213,12 +213,12 @@ export default function App() {
             <div className='space-y-5 flex-1'>
               <div>
                 <label className='block text-sm font-medium mb-2'>Upload Audio</label>
-                <div className='relative'>
+                <div className='relative w-full'>
                   <input
                     type='file'
-                    accept='audio/*, .m4a, .mp3, .wav, audio/mp4, audio/x-m4a'
+                    accept='audio/*, .m4a, .mp3, .aac, .wav, audio/mp4, audio/x-m4a'
                     onChange={handleFile}
-                    className='input file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700'
+                    className='file:mr-2 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700'
                   />
                 </div>
               </div>
